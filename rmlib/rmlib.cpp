@@ -49,8 +49,8 @@ void Rmlib::rm_init (int ip, int port, int ipHA, int portHA){
     serverHA = connect(socketServerHA,(struct sockaddr *) &serverHAAddress, sizeof(serverHAAddress));
 
     *buffer = 'c';
-    send(server, buffer, bufsize, 0);
-    send(serverHA, buffer, bufsize, 0);
+    send(socketServer, buffer, bufsize, 0);
+    send(socketServerHA, buffer, bufsize, 0);
 
     if (server < 0 && serverHA < 0)
     {

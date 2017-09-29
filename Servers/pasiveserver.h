@@ -1,11 +1,15 @@
 #ifndef PASIVESERVER_H
 #define PASIVESERVER_H
+#include <server.h>
 
-
-class pasiveServer
+class pasiveServer: public server
 {
 public:
-    pasiveServer();
+    pasiveServer(int connFd, int listenFd);
+    void initialize();
+
+protected:
+    void syncServer();
 };
 
 #endif // PASIVESERVER_H

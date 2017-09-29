@@ -1,5 +1,6 @@
 #ifndef RMLIB_H
 #define RMLIB_H
+#include <rmref_h.h>
 
 
 class Rmlib
