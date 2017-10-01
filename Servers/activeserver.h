@@ -5,6 +5,7 @@
 class activeServer: public server
 {
 public:
+
     activeServer(int connFd, int listenFd);
     void initialize();
 

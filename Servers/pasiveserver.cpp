@@ -68,14 +68,21 @@ void pasiveServer::initialize(){
     else
     {
         cout << "=> Connection successful" << endl;
+
+        serverSocket = serverFd;
+        serverComm = activeFd;
+        pthread_create(&threadA[0], NULL, communicationServer, NULL);
+        pthread_join(threadA[0], NULL);
     }
 
     cout << endl;
 
-    for (int noThread = 0; noThread < 10; noThread++)
+    serverSocket = serverFd;
+    serverComm = activeFd;
+
+    for (int noThread = 1; noThread < 10; noThread++)
     {
         len = sizeof(clientAddress);
-
         listen(listenFd, 5);
         cout << "=> Listening" << endl;
 
@@ -90,26 +97,17 @@ void pasiveServer::initialize(){
         else
         {
             recv(connFd, buffer, bufsize, 0);
-            if (*buffer = 'p'){
-                cout << "=> Connected to de pasive server" << endl;
-            } else {
-                cout << "=> Connection successful" << endl;
+            cout << "=> Connection successful" << endl;
+
+            void *args = malloc(sizeof(int));
+            args = &connFd;
+
+            pthread_create(&threadA[noThread], NULL, communicationClient, args);
+            pthread_join(threadA[noThread], NULL);
             }
         }
-
-        void *args = &connFd;
-
-        pthread_create(&threadA[noThread], NULL, communicationClient, args);
-        pthread_join(threadA[noThread], NULL);
-    }
 }
 
 void pasiveServer::syncServer(){
     cout << "hello" << endl;
 }
-
-/*void *task1 (void *dummyPt)
-{
-    cout << "Thread No: " << pthread_self() << endl;
-    cout << "\nClosing thread and conn" << endl;
-}*/

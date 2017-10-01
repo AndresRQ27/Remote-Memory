@@ -6,8 +6,9 @@
 class server
 {
 public:
+    int  serverSocket, serverComm;
     int connFd, listenFd;
-    int bufsize = 1024;
+    const int bufsize = 1024;
     pthread_t threadA[10];
 
     server(int connFd, int listenFd);
@@ -18,6 +19,7 @@ protected:
 
     static void * communicationClient(void *pointer);
     static void * communicationServer(void *pointer);
+    static void *task1(void *);
 
     virtual void syncServer() = 0;
 };

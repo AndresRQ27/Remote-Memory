@@ -29,10 +29,16 @@ void Rmlib::rm_init (int ip, int port, int ipHA, int portHA){
     struct sockaddr_in serverHAAddress, serverAddress;
     //socklen_t len; //store size of the address
 
+    if((port > 65535) || (port < 2000))
+    {
+        cerr << "=> Please enter a port number between 2000 - 65535" << endl;
+        exit(1);
+    }
+
     socketServer = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
     socketServerHA = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-    if(socketServer < 0 && socketServerHA < 0)
+    if(socketServer < 0)
     {
         cout << "\n=>Error establishing socket..." << endl;
     }
@@ -40,9 +46,11 @@ void Rmlib::rm_init (int ip, int port, int ipHA, int portHA){
     cout << "\n=> Socket client has been created..." << endl;
 
     serverAddress.sin_family = AF_INET;
+    serverAddress.sin_addr.s_addr = INADDR_ANY;
     serverAddress.sin_port = htons(port);
 
     serverHAAddress.sin_family = AF_INET;
+    serverHAAddress.sin_addr.s_addr = INADDR_ANY;
     serverHAAddress.sin_port = htons(portHA);
 
     server = connect(socketServer,(struct sockaddr *) &serverAddress, sizeof(serverAddress));

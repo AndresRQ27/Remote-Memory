@@ -15,11 +15,10 @@
 #include <string>
 #include <time.h>
 #include <vector>
+#include <rmlib.h>
 #include "activeserver.h"
 
 using namespace std;
-
-void *task1(void *);
 
 activeServer::activeServer(int connFd, int listenFd):server::server(connFd, listenFd){}
 
@@ -27,7 +26,7 @@ void activeServer::initialize(){
     struct sockaddr_in clientAddress;
     socklen_t len; //store size of the address
 
-    for (int noThread = 0; noThread < 10; noThread++)
+    for (int noThread = 1; noThread < 10; noThread++)
     {
         len = sizeof(clientAddress);
         listen(listenFd, 5);
@@ -47,13 +46,17 @@ void activeServer::initialize(){
             recv(connFd, buffer, bufsize, 0);
             if (*buffer = 'p'){
                 cout << "=> Connected to de pasive server" << endl;
+                serverSocket = listenFd;
+                serverComm = connFd;
+                pthread_create(&threadA[0], NULL, communicationServer, NULL);
+                pthread_join(threadA[0], NULL);
                 cout << endl;
-                pthread_create(&threadA[noThread], NULL, communicationServer, NULL);
-                pthread_join(threadA[noThread], NULL);
             } else {
                 cout << "=> Connection successful" << endl;
 
-                void *args = &connFd;
+                void *args = malloc(sizeof(int));
+                args = &connFd;
+
 
                 pthread_create(&threadA[noThread], NULL, communicationClient, args);
                 pthread_join(threadA[noThread], NULL);
@@ -64,9 +67,4 @@ void activeServer::initialize(){
 
 void activeServer::syncServer(){
     cout << "hello" << endl;
-}
-
-void *task1 (void *dummyPt)
-{
-    cout << "Thread No: " << pthread_self() << endl;
 }
