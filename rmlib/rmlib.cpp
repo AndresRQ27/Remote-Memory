@@ -29,7 +29,7 @@ void Rmlib::rm_init (int ip, int port, int ipHA, int portHA){
     struct sockaddr_in serverHAAddress, serverAddress;
     //socklen_t len; //store size of the address
 
-    if((port > 65535) || (port < 2000))
+    if(((port > 65535) || (port < 2000)) && ((portHA > 65535) || (portHA < 2000)))
     {
         cerr << "=> Please enter a port number between 2000 - 65535" << endl;
         exit(1);
@@ -38,7 +38,7 @@ void Rmlib::rm_init (int ip, int port, int ipHA, int portHA){
     socketServer = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
     socketServerHA = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-    if(socketServer < 0)
+    if(socketServer < 0 || socketServerHA < 0)
     {
         cout << "\n=>Error establishing socket..." << endl;
     }
@@ -64,7 +64,7 @@ void Rmlib::rm_init (int ip, int port, int ipHA, int portHA){
     {
         cout << "=> Connection Failed" << endl;
     } else {
-        cout << "=> Connection to the active server" << endl;
+        cout << "=> Connection to the server" << endl;
     }
 
     this->myServer = &server;
