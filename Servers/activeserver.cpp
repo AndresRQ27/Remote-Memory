@@ -26,7 +26,8 @@ void activeServer::initialize(){
     struct sockaddr_in clientAddress;
     socklen_t len; //store size of the address
 
-    for (int noThread = 1; noThread < 10; noThread++)
+    int noThread = 1;
+    while (noThread < 10)
     {
         len = sizeof(clientAddress);
         listen(listenFd, 5);
@@ -44,22 +45,44 @@ void activeServer::initialize(){
         {
             char buffer[bufsize];
             recv(connFd, buffer, bufsize, 0);
-            if (*buffer = 'p'){
+
+            if (*buffer == 'p'){
                 cout << "=> Connected to de pasive server" << endl;
                 serverSocket = listenFd;
                 serverComm = connFd;
-                pthread_create(&threadA[0], NULL, communicationServer, NULL);
-                pthread_join(threadA[0], NULL);
+                threadA[0] = std::thread(&server::communicationServer, this, connFd, listenFd);
+                threadA[0].detach();
                 cout << endl;
             } else {
                 cout << "=> Connection successful" << endl;
 
-                void *args = malloc(sizeof(int));
-                args = &connFd;
+                while (true) {
+                    char read[bufsize];
+                    recv(connFd, read, bufsize, 0);
+                    cout << "señal de vida" << endl;
+                    switch (atoi(read)) {
+                        case 1:{
+                            rmNew(&connFd);
+                            cout << "señal de vida 2" << endl;
+                            break;
+                        }
+                        case 2:{
 
+                            break;
+                        }
+                        case 3:{
 
-                pthread_create(&threadA[noThread], NULL, communicationClient, args);
-                pthread_join(threadA[noThread], NULL);
+                            break;
+                        }
+                        default:{
+                            break;
+                        }
+                    }
+                }
+
+                //threadA[noThread] = std::thread(&server::communicationClient, this, connFd, listenFd);
+                //threadA[noThread].detach();
+                noThread++;
             }
         }
     }

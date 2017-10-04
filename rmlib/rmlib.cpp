@@ -35,10 +35,10 @@ void Rmlib::rm_init (int ip, int port, int ipHA, int portHA){
         exit(1);
     }
 
-    socketServer = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-    socketServerHA = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+    server = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+    serverHA = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-    if(socketServer < 0 || socketServerHA < 0)
+    if(server < 0) //|| serverHA < 0)
     {
         cout << "\n=>Error establishing socket..." << endl;
     }
@@ -49,37 +49,46 @@ void Rmlib::rm_init (int ip, int port, int ipHA, int portHA){
     serverAddress.sin_addr.s_addr = INADDR_ANY;
     serverAddress.sin_port = htons(port);
 
-    serverHAAddress.sin_family = AF_INET;
-    serverHAAddress.sin_addr.s_addr = INADDR_ANY;
-    serverHAAddress.sin_port = htons(portHA);
+    //serverHAAddress.sin_family = AF_INET;
+    //serverHAAddress.sin_addr.s_addr = INADDR_ANY;
+    //serverHAAddress.sin_port = htons(portHA);
 
-    server = connect(socketServer,(struct sockaddr *) &serverAddress, sizeof(serverAddress));
-    serverHA = connect(socketServerHA,(struct sockaddr *) &serverHAAddress, sizeof(serverHAAddress));
+    socketServer = connect(server,(struct sockaddr *) &serverAddress, sizeof(serverAddress));
+    //socketServerHA = connect(serverHA,(struct sockaddr *) &serverHAAddress, sizeof(serverHAAddress));
 
     *buffer = 'c';
-    send(socketServer, buffer, bufsize, 0);
-    send(socketServerHA, buffer, bufsize, 0);
+    send(server, buffer, bufsize, 0);
+    //send(serverHA, buffer, bufsize, 0);
 
-    if (server < 0 && serverHA < 0)
+    if (socketServer < 0) //&& socketServerHA < 0)
     {
         cout << "=> Connection Failed" << endl;
     } else {
         cout << "=> Connection to the server" << endl;
+        cout << endl;
     }
 
     this->myServer = &server;
 }
 
 void Rmlib::rm_new (char* key, void* value, int value_size){
-
+    *buffer = '1';
+    send(*myServer, buffer, bufsize, 0);
+    send(*myServer, key, bufsize, 0);
+    send(*myServer, value, bufsize, 0);
+    send(*myServer, &value_size, bufsize, 0);
 }
 
 rmRef_H Rmlib::rm_get(char* key){
-    *buffer = 'get';
+    *buffer = '2';
     send(*myServer, buffer, bufsize, 0);
     send(*myServer, key, bufsize, 0);
+    rmRef_H * object;
+    recv(*myServer, (rmRef_H *) object ,bufsize, 0);
 }
 
 void Rmlib::rm_delete(rmRef_H* handler){
-
+    *buffer = '3';
+    send(*myServer, buffer, bufsize, 0);
+    send(*myServer, handler->key, bufsize, 0);
 }

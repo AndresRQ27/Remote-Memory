@@ -15,6 +15,7 @@
 #include <string>
 #include <time.h>
 #include <vector>
+#include <thread>
 #include "pasiveserver.h"
 
 using namespace std;
@@ -71,8 +72,8 @@ void pasiveServer::initialize(){
 
         serverSocket = serverFd;
         serverComm = activeFd;
-        pthread_create(&threadA[0], NULL, communicationServer, NULL);
-        pthread_join(threadA[0], NULL);
+        threadA[0] = std::thread(&server::communicationServer, this, activeFd, serverFd);
+        threadA[0].detach();
     }
 
     cout << endl;
@@ -80,7 +81,8 @@ void pasiveServer::initialize(){
     serverSocket = serverFd;
     serverComm = activeFd;
 
-    for (int noThread = 1; noThread < 10; noThread++)
+    int noThread = 1;
+    while (noThread < 10)
     {
         len = sizeof(clientAddress);
         listen(listenFd, 5);
@@ -98,12 +100,9 @@ void pasiveServer::initialize(){
         {
             recv(connFd, buffer, bufsize, 0);
             cout << "=> Connection successful" << endl;
-
-            void *args = malloc(sizeof(int));
-            args = &connFd;
-
-            pthread_create(&threadA[noThread], NULL, communicationClient, args);
-            pthread_join(threadA[noThread], NULL);
+            threadA[noThread] = std::thread(&server::communicationClient, this, connFd, serverFd);
+            threadA[noThread].detach();
+            noThread++;
             }
         }
 }

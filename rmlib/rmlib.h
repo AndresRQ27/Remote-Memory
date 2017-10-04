@@ -8,10 +8,10 @@ class Rmlib
 
 public:
     Rmlib();
-    void rm_init (int ip, int port, int ipHA, int portHA);
-    void rm_new (char* key, void* value, int value_size);
-    rmRef_H rm_get(char* key);
-    void rm_delete(rmRef_H* handler);
+    void rm_init (const int ip, const int port, const int ipHA, const int portHA);
+    void rm_new (char* const key, void* const value, const int value_size);
+    rmRef_H rm_get(char* const key);
+    void rm_delete(rmRef_H* const handler);
 
 private:
     int *myServer;

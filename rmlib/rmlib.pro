@@ -27,7 +27,9 @@ SOURCES += \
 
 HEADERS += \
         rmlib.h \
-    rmref_h.h
+    rmref_h.h \
+    node.h \
+    linkedlist.h
 unix {
     target.path = /usr/lib
     INSTALLS += target
