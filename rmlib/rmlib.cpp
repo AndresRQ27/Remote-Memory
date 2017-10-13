@@ -54,13 +54,13 @@ void Rmlib::rm_init (int ip, int port, int ipHA, int portHA){
     serverHAAddress.sin_port = htons(portHA);
 
     socketServer = connect(server,(struct sockaddr *) &serverAddress, sizeof(serverAddress));
-    socketServerHA = connect(serverHA,(struct sockaddr *) &serverHAAddress, sizeof(serverHAAddress));
+    //socketServerHA = connect(serverHA,(struct sockaddr *) &serverHAAddress, sizeof(serverHAAddress));
 
     *buffer = 'c';
     send(server, buffer, bufsize, 0);
-    send(serverHA, buffer, bufsize, 0);
+    //send(serverHA, buffer, bufsize, 0);
 
-    if (socketServer < 0 && socketServerHA < 0)
+    if (socketServer < 0)// && socketServerHA < 0)
     {
         cout << "=> Connection Failed" << endl;
     } else {

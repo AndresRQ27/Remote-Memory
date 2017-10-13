@@ -89,7 +89,7 @@ void rmGet(){
     try{
         rmRef_H object = rmlib.rm_get(&key[0]);
         cout << "Key: " << object.key << endl;
-        cout << "Value: " << object.value << endl;
+        cout << "Value: " << (char *) object.value << endl;
         cout << "Value_Size: " << object.value_size << endl;
 
     } catch (exception e){

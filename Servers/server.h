@@ -28,9 +28,9 @@ public:
 
 protected:
 
-    const char * rmNew(int *connFd);
-    const char * rmGet(int *connFd);
-    const char * rmDelete(int *connFd);
+    string rmNew(int *connFd);
+    string rmGet(int *connFd);
+    string rmDelete(int *connFd);
 };
 
 #endif // SERVER_H
