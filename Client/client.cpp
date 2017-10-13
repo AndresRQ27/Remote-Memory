@@ -1,12 +1,20 @@
 #include <iostream>
+#include <linkedlist.h>
+#include <node.h>
 #include <rmlib.h>
+#include <rmref_h.h>
 
 using namespace std;
+
+static LinkedList<rmRef_H> list;
 
 void rminit();
 void rmNew();
 void rmGet();
 void rmDelete();
+void signal1(char *key, void* value, int value_size);
+void signal2(char *key);
+void signal3(rmRef_H *object);
 
 static Rmlib rmlib;
 
@@ -55,7 +63,9 @@ void rminit(){
 }
 
 void rmNew(){
-    char key[1024], value[1024], value_size[1024];
+    char *key = new char[1024];
+    char *value = new char[1024];
+    char value_size[1024];
     cout << "Please enter the needed information" << endl;
     cout << "=> key: " << flush;
     cin >> key;
@@ -63,8 +73,10 @@ void rmNew(){
     cin >> value;
     cout << "=> value_size: " << flush;
     cin >> value_size;
+    cout << endl;
 
     rmlib.rm_new(&key[0], (void*) &value[0], atoi(value_size));
+    signal1(key, value, atoi(value_size));
 }
 
 void rmGet(){
@@ -72,8 +84,20 @@ void rmGet(){
     cout << "Please enter the needed information" << endl;
     cout << "=> key: " << flush;
     cin >> key;
+    cout << endl;
 
-    rmlib.rm_get(&key[0]);
+    try{
+        rmRef_H object = rmlib.rm_get(&key[0]);
+        cout << "Key: " << object.key << endl;
+        cout << "Value: " << object.value << endl;
+        cout << "Value_Size: " << object.value_size << endl;
+
+    } catch (exception e){
+
+        signal2(&key[0]);
+    }
+        cout << endl;
+
 }
 
 void rmDelete(){
@@ -81,6 +105,35 @@ void rmDelete(){
     cout << "Please enter the needed information" << endl;
     cout << "=> key: " << flush;
     cin >> key;
+    cout << endl;
     rmRef_H object(&key[0], NULL, 0);
     rmlib.rm_delete(&object);
+    signal3(&object);
+}
+
+
+
+
+
+
+
+
+
+void signal1(char *key, void* value, int value_size){
+    rmRef_H object(key, value, value_size);
+    list.addNode(object, key);
+}
+
+void signal2(char *key){
+    Node<rmRef_H> *objectP = list.search(key);
+    cout << "Key: " << objectP->object.key << endl;
+    cout << "Value: " << (char *) objectP->object.value << endl;
+    cout << "Value_Size: " << objectP->object.value_size << endl;
+}
+
+void signal3(rmRef_H *object){
+    Node<rmRef_H> *objectP = list.removeNode(object->key);
+    delete(objectP->object.key);
+    delete(objectP->object.value);
+    delete(objectP);
 }

@@ -22,14 +22,14 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-        rmlib.cpp \
-    rmref_h.cpp
+    rmref_h.cpp \
+    rmlib.cpp
 
 HEADERS += \
-        rmlib.h \
     rmref_h.h \
     node.h \
-    linkedlist.h
+    linkedlist.h \
+    rmlib.h
 unix {
     target.path = /usr/lib
     INSTALLS += target

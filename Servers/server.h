@@ -23,13 +23,14 @@ public:
 
     void communicationClient(int const connFd, int const listenFd);
     void communicationServer(int const connFd, int const listenFd);
-    static void *task1(void *);
 
     virtual void syncServer() = 0;
 
 protected:
 
-    void rmNew(int *connFd);
+    const char * rmNew(int *connFd);
+    const char * rmGet(int *connFd);
+    const char * rmDelete(int *connFd);
 };
 
 #endif // SERVER_H

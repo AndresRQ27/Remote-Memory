@@ -56,30 +56,7 @@ void activeServer::initialize(){
             } else {
                 cout << "=> Connection successful" << endl;
 
-                while (true) {
-                    char read[bufsize];
-                    recv(connFd, read, bufsize, 0);
-                    cout << "señal de vida" << endl;
-                    switch (atoi(read)) {
-                        case 1:{
-                            rmNew(&connFd);
-                            cout << "señal de vida 2" << endl;
-                            break;
-                        }
-                        case 2:{
-
-                            break;
-                        }
-                        case 3:{
-
-                            break;
-                        }
-                        default:{
-                            break;
-                        }
-                    }
-                }
-
+                server::communicationClient(connFd, listenFd);
                 //threadA[noThread] = std::thread(&server::communicationClient, this, connFd, listenFd);
                 //threadA[noThread].detach();
                 noThread++;

@@ -3,7 +3,8 @@ CONFIG += console c++11
 CONFIG -= app_bundle
 CONFIG -= qt
 
-SOURCES += client.cpp
+SOURCES += \
+    client.cpp
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../rmlib/release/ -lrmlib
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../rmlib/debug/ -lrmlib

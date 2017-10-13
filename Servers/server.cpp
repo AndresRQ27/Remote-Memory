@@ -27,58 +27,119 @@ server::server(int connFd, int listenFd)
 }
 
 void server::communicationServer(int connFd, int listenFd){
-    task1(NULL);
+    while (true) {
+        char read[bufsize] = {0};
+        recv(connFd, read, bufsize, 0);
+        switch (atoi(read)) {
+            case 1:{
+                const char * buffer = rmNew(&connFd);
+                send(connFd, buffer, bufsize, 0);
+                break;
+            }
+            case 2:{
+
+                break;
+            }
+            case 3:{
+
+                break;
+            }
+            default:{
+                break;
+            }
+        }
+    }
 }
 
 void server::communicationClient(int connFd, int listenFd){
     try{
         char read[bufsize];
+        char null[bufsize] = {0};
         while (true) {
             recv(connFd, read, bufsize, 0);
-            cout << "señal de vida" << endl;
+            const char *answer = &null[0];
             switch (atoi(read)) {
                 case 1:{
-                    rmNew(&connFd);
-                    cout << "señal de vida 2" << endl;
+                    answer = rmNew(&connFd);
                     break;
                 }
                 case 2:{
-
+                    answer = rmGet(&connFd);
                     break;
                 }
                 case 3:{
-
+                    answer = rmDelete(&connFd);
                     break;
                 }
                 default:{
                     break;
                 }
             }
+            send(connFd, answer, bufsize, 0);
         }
     } catch (exception e){
         cout << "=> Client lost..." << endl;
     }
-    task1(NULL);
 }
 
-void server::rmNew(int *connFd){
-    char *key;
-    char *value;
-    char *value_size;
+const char * server::rmNew(int *connFd){
+    char * key = new char[bufsize]();
+    char * value = new char[bufsize]();
+    char value_size[bufsize] = {0};
     recv(*connFd, key, bufsize, 0);
     recv(*connFd, value, bufsize, 0);
     recv(*connFd, value_size, bufsize, 0);
-    rmRef_H newRm(key, (void *) value, atoi(value_size));
-    list.addNode(newRm, key);
+    rmRef_H newRm(key, value, atoi(value_size));
+
+    string answer = "";
+
+    if(!list.addNode(newRm, key)){
+        answer = "=> Error creating the node. Is the key already in?";
+    } else {
+        answer = "=> Node created";
+    }
+
+    return answer.c_str();
 }
 
-void * server::task1 (void *dummyPt)
-{
-    int i = 0;
-    cout << "Thread No: " << i << endl;
-    return NULL;
+const char * server::rmGet(int *connFd){
+    char key[bufsize] = {0};
+    recv(*connFd, key, bufsize, 0);
+    Node<rmRef_H> * object = list.search(key);
+
+    int number = object->object.value_size;
+    std::string s = std::to_string(number);
+
+    send(*connFd, object->object.key, bufsize, 0);
+    send(*connFd, object->object.value, bufsize, 0);
+    send(*connFd, s.c_str(), bufsize, 0);
+
+    string answer = "";
+    if(object == NULL){
+        answer = "=> Error finding the node. Does it exist?";
+    } else {
+        answer = "=> Node found";
+    }
+
+    return answer.c_str();
 }
 
-//std::thread * server::threadA[] = std::thread[10];
+const char * server::rmDelete(int *connFd){
+    char key[bufsize] = {0};
+    recv(*connFd, key, bufsize, 0);
+
+    Node<rmRef_H> * object = list.removeNode(key);
+
+    string answer = "";
+    if(object == NULL){
+        answer = "=> Node can't be deleted. Does it exist?";
+    } else {
+        free(object->object.key);
+        free(object->object.value);
+        free(object);
+        answer = "=> Node deleted";
+    }
+    return answer.c_str();
+}
 
 LinkedList<rmRef_H> server::list = LinkedList<rmRef_H>();
