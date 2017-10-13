@@ -40,7 +40,7 @@ int main()
             break;
         }
         default:
-            cout << "Commando incorrecto" << flush;
+            cout << "Incorrect command" << endl;
             break;
         }
     }
@@ -75,8 +75,12 @@ void rmNew(){
     cin >> value_size;
     cout << endl;
 
-    rmlib.rm_new(&key[0], (void*) &value[0], atoi(value_size));
-    signal1(key, value, atoi(value_size));
+    try{
+        rmlib.rm_new(&key[0], (void*) &value[0], atoi(value_size));
+    } catch (...){
+        rmlib.rm_new(&key[0], (void*) &value[0], atoi(value_size));
+        signal1(key, value, atoi(value_size));
+     }
 }
 
 void rmGet(){
@@ -92,12 +96,10 @@ void rmGet(){
         cout << "Value: " << (char *) object.value << endl;
         cout << "Value_Size: " << object.value_size << endl;
 
-    } catch (exception e){
-
+    } catch (...){
         signal2(&key[0]);
     }
-        cout << endl;
-
+    cout << endl;
 }
 
 void rmDelete(){
@@ -107,8 +109,14 @@ void rmDelete(){
     cin >> key;
     cout << endl;
     rmRef_H object(&key[0], NULL, 0);
-    rmlib.rm_delete(&object);
-    signal3(&object);
+
+    try{
+       rmlib.rm_delete(&object);
+    } catch (...){
+       rmlib.rm_delete(&object);
+       signal3(&object);
+    }
+
 }
 
 

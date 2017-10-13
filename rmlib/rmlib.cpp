@@ -54,13 +54,13 @@ void Rmlib::rm_init (int ip, int port, int ipHA, int portHA){
     serverHAAddress.sin_port = htons(portHA);
 
     socketServer = connect(server,(struct sockaddr *) &serverAddress, sizeof(serverAddress));
-    //socketServerHA = connect(serverHA,(struct sockaddr *) &serverHAAddress, sizeof(serverHAAddress));
+    socketServerHA = connect(serverHA,(struct sockaddr *) &serverHAAddress, sizeof(serverHAAddress));
 
     *buffer = 'c';
     send(server, buffer, bufsize, 0);
-    //send(serverHA, buffer, bufsize, 0);
+    send(serverHA, buffer, bufsize, 0);
 
-    if (socketServer < 0)// && socketServerHA < 0)
+    if (socketServer < 0 && socketServerHA < 0)
     {
         cout << "=> Connection Failed" << endl;
     } else {
@@ -72,57 +72,85 @@ void Rmlib::rm_init (int ip, int port, int ipHA, int portHA){
 }
 
 void Rmlib::rm_new (char* key, void* value, int value_size){
+    signal(SIGPIPE, SIG_IGN);
     *buffer = '1';
-    send(*myServer, buffer, bufsize, 0);
-    send(*myServer, key, bufsize, 0);
-    send(*myServer, value, bufsize, 0);
+    if (send(*myServer, buffer, bufsize, 0) > 0){
+        if (send(*myServer, key, bufsize, 0) > 0){
+            if (send(*myServer, value, bufsize, 0) > 0){
+                stringstream strs;
+                strs << value_size;
+                string temp_str = strs.str();
+                char* size_char = (char*) temp_str.c_str();
 
-    stringstream strs;
-    strs << value_size;
-    string temp_str = strs.str();
-    char* size_char = (char*) temp_str.c_str();
+                send(*myServer, size_char, bufsize, 0);
 
-    send(*myServer, size_char, bufsize, 0);
-
-    char answer[bufsize];
-    recv(*myServer, answer, bufsize, 0);
-    cout << answer << endl;
+                char answer[bufsize];
+                recv(*myServer, answer, bufsize, 0);
+                cout << answer << endl;
+            } else {
+                cout << "=> Main server lost..." << endl;
+                this->myServer = &serverHA;
+                throw std::error_condition();
+            }
+        } else {
+            cout << "=> Main server lost..." << endl;
+            this->myServer = &serverHA;
+            throw std::error_condition();
+        }
+    } else {
+        cout << "=> Main server lost..." << endl;
+        this->myServer = &serverHA;
+        throw std::error_condition();
+    }
 }
 
 rmRef_H Rmlib::rm_get(char* key){
     signal(SIGPIPE, SIG_IGN);
-    try{
-        *buffer = '2';
-        send(*myServer, buffer, bufsize, 0);
-        send(*myServer, key, bufsize, 0);
+    *buffer = '2';
+    if (send(*myServer, buffer, bufsize, 0) > 0){
+        if (send(*myServer, key, bufsize, 0) > 0){
+            char key2[bufsize];
+            char value[bufsize];
+            char value_size[bufsize];
+            recv(*myServer, key2, bufsize, 0);
+            recv(*myServer, value, bufsize, 0);
+            recv(*myServer, value_size, bufsize, 0);
 
-        char key2[bufsize];
-        char value[bufsize];
-        char value_size[bufsize];
-        recv(*myServer, key2, bufsize, 0);
-        recv(*myServer, value, bufsize, 0);
-        recv(*myServer, value_size, bufsize, 0);
+            rmRef_H object(&key2[0], (void *) value, stoi(value_size));
 
-        rmRef_H object(&key2[0], (void *) value, stoi(value_size));
+            char answer[bufsize];
+            recv(*myServer, answer, bufsize, 0);
+            cout << answer << endl;
 
-        char answer[bufsize];
-        recv(*myServer, answer, bufsize, 0);
-        cout << answer << endl;
-
-        return object;
-    } catch (exception e){
-        rmRef_H object;
-        cout << "=> Server down..." << endl;
-        return object;
+            return object;
+        } else {
+            cout << "=> Main server lost..." << endl;
+            this->myServer = &serverHA;
+            throw std::error_condition();
+        }
+    } else {
+        cout << "=> Main server lost..." << endl;
+        this->myServer = &serverHA;
+        throw std::error_condition();
     }
 }
 
 void Rmlib::rm_delete(rmRef_H* handler){
+    signal(SIGPIPE, SIG_IGN);
     *buffer = '3';
-    send(*myServer, buffer, bufsize, 0);
-    send(*myServer, handler->key, bufsize, 0);
-
-    char answer[bufsize];
-    recv(*myServer, answer, bufsize, 0);
-    cout << answer << endl;
+    if (send(*myServer, buffer, bufsize, 0) > 0){
+        if(send(*myServer, handler->key, bufsize, 0) > 0){
+            char answer[bufsize];
+            recv(*myServer, answer, bufsize, 0);
+            cout << answer << endl;
+        } else {
+            cout << "=> Main server lost..." << endl;
+            this->myServer = &serverHA;
+            throw std::error_condition();
+        }
+    } else {
+        cout << "=> Main server lost..." << endl;
+        this->myServer = &serverHA;
+        throw std::error_condition();
+    }
 }

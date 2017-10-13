@@ -25,39 +25,49 @@ server::server(int connFd, int listenFd)
 {
     this->connFd = connFd;
     this->listenFd = listenFd;
+    counter = 0;
 }
 
-void server::communicationServer(int connFd, int listenFd){
-    /*while (true) {
+void server::communicationServer(){
+    while (true) {
         char read[bufsize] = {0};
-        recv(connFd, read, bufsize, 0);
+        recv(serverSocket, read, bufsize, 0);
         switch (atoi(read)) {
             case 1:{
-                const char * buffer = rmNew(&connFd);
-                send(connFd, buffer, bufsize, 0);
+                rmNew(&serverSocket);
                 break;
             }
             case 2:{
-
+                rmGet(&serverSocket);
                 break;
             }
             case 3:{
-
+                rmDelete(&serverSocket);
                 break;
             }
             default:{
                 break;
             }
         }
-    }*/
+    }
 }
 
 void server::communicationClient(int connFd, int listenFd){
     signal(SIGPIPE, SIG_IGN);
+    //std::thread recovery;
     try{
-        char read[bufsize];
+        char read[bufsize] = {0};
         while (true) {
             recv(connFd, read, bufsize, 0);
+
+            if (activeS){
+                send(serverComm, read, bufsize, 0);
+            } else {
+                //recovery = std::thread(&server::reconnect, this);
+                //recovery.detach();
+                reconnect();
+            }
+
             string answer;
             switch (atoi(read)) {
                 case 1:{
@@ -84,7 +94,7 @@ void server::communicationClient(int connFd, int listenFd){
             }
 
         }
-    } catch (exception e){
+    } catch (...){
         cout << "=> Client lost..." << endl;
         //Close thread
     }
@@ -97,6 +107,13 @@ string server::rmNew(int *connFd){
     recv(*connFd, key, bufsize, 0);
     recv(*connFd, value, bufsize, 0);
     recv(*connFd, value_size, bufsize, 0);
+
+    if (activeS){
+        send(serverComm, key, bufsize, 0);
+        send(serverComm, value, bufsize, 0);
+        send(serverComm, value_size, bufsize, 0);
+    }
+
     rmRef_H newRm(key, value, atoi(value_size));
 
     string answer;
@@ -105,6 +122,11 @@ string server::rmNew(int *connFd){
         answer = "=> Error creating the node. Is the key already in?";
     } else {
         answer = "=> Node created";
+        cache[counter] = list.head;
+        counter++;
+        if (counter >= 5){
+            counter = 0;
+        }
     }
 
     return answer;
@@ -113,7 +135,18 @@ string server::rmNew(int *connFd){
 string server::rmGet(int *connFd){
     char key[bufsize] = {0};
     recv(*connFd, key, bufsize, 0);
-    Node<rmRef_H> * object = list.search(key);
+
+    Node<rmRef_H> * object;
+
+    object = findInCache(key);
+    if(object == NULL){
+        object = list.search(key);
+        cache[counter] = object;
+        counter++;
+        if (this->counter >= 5){
+            this->counter = 0;
+        }
+    }
 
     int number = object->object.value_size;
     std::string s = std::to_string(number);
@@ -137,6 +170,10 @@ string server::rmDelete(int *connFd){
     char key[bufsize] = {0};
     recv(*connFd, key, bufsize, 0);
 
+    if (activeS){
+        send(serverComm, key, bufsize, 0);
+    }
+
     Node<rmRef_H> * object = list.removeNode(key);
 
     string answer;
@@ -149,6 +186,47 @@ string server::rmDelete(int *connFd){
         answer = "=> Node deleted";
     }
     return answer;
+}
+
+Node<rmRef_H> * server::findInCache(char *key){
+    int i = 0;
+    if(list.length > 0){
+        string searchKey;
+        string wholeKey = key;
+
+        int cached;
+        if (list.length < 5){
+            cached = list.length;
+        } else {
+            cached = 5;
+        }
+
+        for(;i < cached; i++){
+            searchKey = cache[i]->key;
+            if (searchKey == wholeKey){
+                break;
+            }
+        }
+    }
+    return cache[i];
+}
+
+void server::reconnect(){
+    try{
+        struct sockaddr_in serverAddress;
+
+        serverSocket = socket(PF_INET, SOCK_STREAM, 0);
+
+        serverAddress.sin_family = AF_INET;
+        serverAddress.sin_addr.s_addr = INADDR_ANY;
+        serverAddress.sin_port = htons(this->theOtherPort);
+
+        serverComm = connect(serverSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress));
+        if(!(serverComm < 0)){
+            char buffer = 'p';
+            send(serverSocket, &buffer, bufsize, 0);
+        }
+    } catch (...){}
 }
 
 LinkedList<rmRef_H> server::list = LinkedList<rmRef_H>();

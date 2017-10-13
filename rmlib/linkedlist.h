@@ -84,7 +84,7 @@ Node<T> * LinkedList<T>::removeNode(char* key){
                 aux2->next = deleteThis->next;
                 this->length -= 1;
                 if (aux1 == aux2){
-                    this->head = NULL;
+                    this->head = aux1->next;
                 }
                 break;
             } else {

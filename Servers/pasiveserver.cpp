@@ -23,12 +23,15 @@ using namespace std;
 pasiveServer::pasiveServer(int connFd, int listenFd):server::server(connFd, listenFd){}
 
 void pasiveServer::initialize(){
+    activeS = false;
     int portNum, serverFd, activeFd;
     char buffer[bufsize];
-    string portNo;
+    string portNo, ip;
     struct sockaddr_in serverAddress, clientAddress;
     socklen_t len; //store size of the address
 
+    cout << "Type the ip number of the active server: " << flush;
+    getline(cin, ip);
     cout << "Type the port number of the active server: " << flush;
     getline(cin, portNo);
     portNum = stoi(portNo);
@@ -59,7 +62,7 @@ void pasiveServer::initialize(){
     *buffer = 'p';
     send(serverFd, buffer, bufsize, 0);
 
-    if (connFd < 0)
+    if (activeFd < 0)
     {
         cerr << "=> Cannot accept connection" << endl;
         exit(1);
@@ -68,16 +71,14 @@ void pasiveServer::initialize(){
     {
         cout << "=> Connection successful" << endl;
 
+        this->theOtherPort = portNum;
         serverSocket = serverFd;
         serverComm = activeFd;
-        threadA[0] = std::thread(&server::communicationServer, this, activeFd, serverFd);
+        threadA[0] = std::thread(&server::communicationServer, this);
         threadA[0].detach();
     }
 
     cout << endl;
-
-    serverSocket = serverFd;
-    serverComm = activeFd;
 
     int noThread = 1;
     while (noThread < 10)
@@ -98,9 +99,9 @@ void pasiveServer::initialize(){
         {
             recv(connFd, buffer, bufsize, 0);
             cout << "=> Connection successful" << endl;
-            server::communicationClient(connFd, listenFd);
-            //threadA[noThread] = std::thread(&server::communicationClient, this, connFd, serverFd);
-            //threadA[noThread].detach();
+            //server::communicationClient(connFd, listenFd);
+            threadA[noThread] = std::thread(&server::communicationClient, this, connFd, serverFd);
+            threadA[noThread].detach();
             noThread++;
             }
         }

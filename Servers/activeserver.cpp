@@ -23,6 +23,7 @@ using namespace std;
 activeServer::activeServer(int connFd, int listenFd):server::server(connFd, listenFd){}
 
 void activeServer::initialize(){
+    activeS = true;
     struct sockaddr_in clientAddress;
     socklen_t len; //store size of the address
 
@@ -50,17 +51,17 @@ void activeServer::initialize(){
                 cout << "=> Connected to de pasive server" << endl;
                 serverSocket = listenFd;
                 serverComm = connFd;
-                threadA[0] = std::thread(&server::communicationServer, this, connFd, listenFd);
+                threadA[0] = std::thread(&server::communicationServer, this);
                 threadA[0].detach();
                 cout << endl;
-            } else {
+            } else if (*buffer == 'c'){
                 cout << "=> Connection successful" << endl;
 
-                server::communicationClient(connFd, listenFd);
-                //threadA[noThread] = std::thread(&server::communicationClient, this, connFd, listenFd);
-                //threadA[noThread].detach();
+                threadA[noThread] = std::thread(&server::communicationClient, this, connFd, listenFd);
+                threadA[noThread].detach();
                 noThread++;
             }
+            *buffer = '0';
         }
     }
 }
