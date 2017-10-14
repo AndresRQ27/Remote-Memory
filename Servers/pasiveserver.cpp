@@ -99,7 +99,7 @@ void pasiveServer::initialize(){
         {
             recv(connFd, buffer, bufsize, 0);
             cout << "=> Connection successful" << endl;
-            //server::communicationClient(connFd, listenFd);
+
             threadA[noThread] = std::thread(&server::communicationClient, this, connFd, serverFd);
             threadA[noThread].detach();
             noThread++;

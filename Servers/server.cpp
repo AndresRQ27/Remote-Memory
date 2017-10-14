@@ -26,12 +26,13 @@ server::server(int connFd, int listenFd)
     this->connFd = connFd;
     this->listenFd = listenFd;
     counter = 0;
+    *cache = NULL;
 }
 
 void server::communicationServer(){
     while (true) {
         char read[bufsize] = {0};
-        recv(serverSocket, read, bufsize, 0);
+        recv(serverComm, read, bufsize, 0);
         switch (atoi(read)) {
             case 1:{
                 rmNew(&serverSocket);
@@ -45,6 +46,10 @@ void server::communicationServer(){
                 rmDelete(&serverSocket);
                 break;
             }
+            case 4:{
+                receiveRecover();
+                break;
+            }
             default:{
                 break;
             }
@@ -54,6 +59,7 @@ void server::communicationServer(){
 
 void server::communicationClient(int connFd, int listenFd){
     signal(SIGPIPE, SIG_IGN);
+    recovered = false;
     //std::thread recovery;
     try{
         char read[bufsize] = {0};
@@ -62,10 +68,15 @@ void server::communicationClient(int connFd, int listenFd){
 
             if (activeS){
                 send(serverComm, read, bufsize, 0);
-            } else {
+            } else if (!recovered){
                 //recovery = std::thread(&server::reconnect, this);
                 //recovery.detach();
                 reconnect();
+                if (!(serverComm < 0)){
+                    char buffer = '4';
+                    send(serverComm, &buffer, bufsize, 0);
+                    sendRecover();
+                }
             }
 
             string answer;
@@ -92,7 +103,6 @@ void server::communicationClient(int connFd, int listenFd){
                 answer = "=> Operation invalid";
                 send(connFd, answer.c_str(), bufsize, 0);
             }
-
         }
     } catch (...){
         cout << "=> Client lost..." << endl;
@@ -148,13 +158,25 @@ string server::rmGet(int *connFd){
         }
     }
 
-    int number = object->object.value_size;
-    std::string s = std::to_string(number);
+    if (object != NULL){
+        send(*connFd, object->object.key, bufsize, 0);
 
-    send(*connFd, object->object.key, bufsize, 0);
-    char *laVoide = (char *) object->object.value;
-    send(*connFd, laVoide, bufsize, 0);
-    send(*connFd, s.c_str(), bufsize, 0);
+        char *laVoide = (char *) object->object.value;
+        send(*connFd, laVoide, bufsize, 0);
+
+        int number = object->object.value_size;
+        std::string s = std::to_string(number);
+        send(*connFd, s.c_str(), bufsize, 0);
+    } else {
+        string default1= "No node";
+        int number = 0;
+        std::string s = std::to_string(number);
+        send(*connFd, default1.c_str(), bufsize, 0);
+
+        send(*connFd, default1.c_str(), bufsize, 0);
+
+        send(*connFd, s.c_str(), bufsize, 0);
+    }
 
     string answer;
     if(object == NULL){
@@ -190,6 +212,7 @@ string server::rmDelete(int *connFd){
 
 Node<rmRef_H> * server::findInCache(char *key){
     int i = 0;
+    Node<rmRef_H> *aux = NULL;
     if(list.length > 0){
         string searchKey;
         string wholeKey = key;
@@ -204,11 +227,12 @@ Node<rmRef_H> * server::findInCache(char *key){
         for(;i < cached; i++){
             searchKey = cache[i]->key;
             if (searchKey == wholeKey){
+                aux = cache[i];
                 break;
             }
         }
     }
-    return cache[i];
+    return aux;
 }
 
 void server::reconnect(){
@@ -225,8 +249,52 @@ void server::reconnect(){
         if(!(serverComm < 0)){
             char buffer = 'p';
             send(serverSocket, &buffer, bufsize, 0);
+            recovered = true;
         }
     } catch (...){}
+}
+
+void server::receiveRecover(){
+    char *numberChar;
+    counter = 0;
+    recv(serverSocket, numberChar, bufsize, 0);
+    for (int i = 0; i < atoi(numberChar); i++){
+        char * key = new char[bufsize]();
+        char * value = new char[bufsize]();
+        char value_size[bufsize] = {0};
+        recv(serverSocket, key, bufsize, 0);
+        recv(serverSocket, value, bufsize, 0);
+        recv(serverSocket, value_size, bufsize, 0);
+        rmRef_H newRm(key, value, atoi(value_size));
+        list.addNode(newRm, key);
+
+        cache[counter] = list.head;
+        counter++;
+        if (counter >= 5){
+            counter = 0;
+        }
+    }
+
+}
+
+void server::sendRecover(){
+    int lenght = list.length;
+    std::string slenght = std::to_string(lenght);
+    send(serverComm, slenght.c_str(), bufsize, 0);
+
+    Node<rmRef_H> *aux= list.head;
+
+    for (int i = 0; i < list.length; i++){
+        send(serverComm, aux->object.key, bufsize, 0);
+
+        char *laVoide = (char *) aux->object.value;
+        send(serverComm, laVoide, bufsize, 0);
+
+        int number = aux->object.value_size;
+        std::string s = std::to_string(number);
+        send(serverComm, s.c_str(), bufsize, 0);
+    }
+
 }
 
 LinkedList<rmRef_H> server::list = LinkedList<rmRef_H>();

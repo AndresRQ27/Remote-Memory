@@ -17,6 +17,7 @@ public:
 
     //Can't be static
     bool activeS;
+    bool recovered;
 
     Node<rmRef_H> *cache[5];
     int counter;
@@ -35,6 +36,8 @@ public:
 protected:
 
     void reconnect();
+    void receiveRecover();
+    void sendRecover();
     string rmNew(int *connFd);
     string rmGet(int *connFd);
     string rmDelete(int *connFd);

@@ -134,9 +134,15 @@ void signal1(char *key, void* value, int value_size){
 
 void signal2(char *key){
     Node<rmRef_H> *objectP = list.search(key);
-    cout << "Key: " << objectP->object.key << endl;
-    cout << "Value: " << (char *) objectP->object.value << endl;
-    cout << "Value_Size: " << objectP->object.value_size << endl;
+    if (objectP != NULL){
+        cout << "Key: " << objectP->object.key << endl;
+        cout << "Value: " << (char *) objectP->object.value << endl;
+        cout << "Value_Size: " << objectP->object.value_size << endl;
+    } else {
+        cout << "Key: No object" << endl;
+        cout << "Value: No object" << endl;
+        cout << "Value_Size: No object" << endl;
+    }
 }
 
 void signal3(rmRef_H *object){
